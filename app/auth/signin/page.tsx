@@ -1,30 +1,30 @@
-import { getServerSession } from "next-auth"
-import { redirect } from "next/navigation"
-import { authOptions } from "../api/auth/[...nextauth]/route"
+"use client"
 
-export default async function SignIn() {
-  const session = await getServerSession(authOptions)
+import { signInWithSpotify } from "@/lib/supabase"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect } from "react"
 
-  if (session) {
-    redirect("/")
-  }
+export default function SignIn() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+
+  useEffect(() => {
+    const handleSignIn = async () => {
+      try {
+        await signInWithSpotify()
+      } catch (error) {
+        console.error("Sign in error:", error)
+      }
+    }
+    handleSignIn()
+  }, [])
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight">
-            Sign in to your account
-          </h2>
-        </div>
-        <div className="mt-8 space-y-6">
-          <a
-            href="/api/auth/signin/spotify"
-            className="group relative flex w-full justify-center rounded-md bg-[#1DB954] px-3 py-2 text-sm font-semibold text-white hover:bg-[#1ed760] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1DB954]"
-          >
-            Sign in with Spotify
-          </a>
-        </div>
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-center">
+        <h1 className="mb-4 text-2xl font-bold">Spotifyでログイン</h1>
+        <p className="text-gray-600">リダイレクト中...</p>
       </div>
     </div>
   )

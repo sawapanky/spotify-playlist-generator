@@ -1,0 +1,6 @@
+version: 2
+tunnels:
+  spotify-app:
+    proto: http
+    addr: 3000
+    region: jp 

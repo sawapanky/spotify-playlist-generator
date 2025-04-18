@@ -20,12 +20,21 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    domains: ['i.scdn.co'], // Spotifyの画像ドメイン
     unoptimized: true,
   },
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/auth/signin/spotify',
+        destination: `https://accounts.spotify.com/authorize?client_id=${process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID}&response_type=code&redirect_uri=${process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI}&scope=user-read-email%20user-read-private%20playlist-read-private%20playlist-modify-public%20playlist-modify-private&state=${process.env.NEXTAUTH_SECRET}`,
+      },
+    ]
   },
 }
 
