@@ -7,33 +7,42 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   
-  // リダイレクト先URL
-  let redirectUrl = "/dashboard";
+  // デバッグ情報をログに出力
+  console.log("Auth callback called with URL:", request.url);
+  console.log("Code parameter:", code);
   
-  if (code) {
-    const supabase = createRouteHandlerClient({ cookies });
-    
-    try {
-      // コードをセッションと交換
-      await supabase.auth.exchangeCodeForSession(code);
-      
-      // セッションを取得してユーザーを確認
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        // セッションがない場合はエラーページにリダイレクト
-        redirectUrl = "/login?error=no_session";
-      }
-    } catch (error) {
-      console.error("認証エラー:", error);
-      // エラーの場合はログインページにリダイレクト
-      redirectUrl = "/login?error=auth_failed";
-    }
-  } else {
-    // コードがない場合もエラーとして扱う
-    redirectUrl = "/login?error=no_code";
+  // ローカルでリダイレクト（デプロイIDを参照しない）
+  const baseUrl = requestUrl.origin;
+  
+  if (!code) {
+    console.error("No code provided in callback");
+    return NextResponse.redirect(`${baseUrl}/login?error=no_code`);
   }
   
-  // 適切なページにリダイレクト
-  return NextResponse.redirect(new URL(redirectUrl, request.url));
+  const supabase = createRouteHandlerClient({ cookies });
+  
+  try {
+    // codeを使ってセッションを確立
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    
+    if (error) {
+      console.error("Error exchanging code for session:", error);
+      return NextResponse.redirect(`${baseUrl}/login?error=${encodeURIComponent(error.message)}`);
+    }
+    
+    // セッションを確認
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No session after code exchange");
+      return NextResponse.redirect(`${baseUrl}/login?error=no_session`);
+    }
+    
+    console.log("Authentication successful, redirecting to dashboard");
+    // 相対パスでリダイレクト
+    return NextResponse.redirect(`${baseUrl}/dashboard`);
+  } catch (error) {
+    console.error("Authentication error:", error);
+    return NextResponse.redirect(`${baseUrl}/login?error=unexpected_error`);
+  }
 }
